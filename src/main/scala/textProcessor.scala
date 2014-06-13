@@ -61,6 +61,14 @@ object textProcessor {
       }
     }
   }
+
+  def getFrequentItems(hs: Stream[Header]): List[(String, Int)] = {
+    hs.flatMap(_.keys.toList).groupBy(w=>w).mapValues(_.size).toList.sortBy(_._2).reverse
+  }
+
+//  def getFrequentHeaderItems(hs: Stream[Header]): List[String, Int] ={
+//    hs.foldLeft()
+//  }
 //  def keyStats(ld: Stream[Header]): Map[String, Int] = {
 //
 //  }

@@ -66,6 +66,12 @@ object textProcessor {
     hs.flatMap(_.keys.toList).groupBy(w=>w).mapValues(_.size).toList.sortBy(_._2).reverse
   }
 
+  def md5Hash(text: String) : String = {
+    java.security.MessageDigest.getInstance("MD5")
+      .digest(text.getBytes()).map(0xFF & _)
+      .map { "%02x".format(_) }.foldLeft(""){_ + _}
+  }
+
 //  def getFrequentHeaderItems(hs: Stream[Header]): List[String, Int] ={
 //    hs.foldLeft()
 //  }

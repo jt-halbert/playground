@@ -68,8 +68,8 @@ object textProcessor {
 
   def md5Hash(text: String) : String = {
     java.security.MessageDigest.getInstance("MD5")
-      .digest(text.getBytes()).map(0xFF & _)
-      .map { "%02x".format(_) }.foldLeft(""){_ + _}
+      .digest(text.getBytes).map(0xFF & _)
+      .map("%02x".format(_)).foldLeft(""){_ + _}
   }
 
 //  def getFrequentHeaderItems(hs: Stream[Header]): List[String, Int] ={

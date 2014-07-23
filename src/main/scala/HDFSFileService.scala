@@ -5,6 +5,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.SequenceFile
 import org.apache.hadoop.io.Text
+import org.apache.hadoop.examples.terasort.TeraInputFormat
 
 import scala.reflect.ClassTag
 
@@ -15,7 +16,7 @@ import scala.reflect.ClassTag
  */
 object HDFSFileService {
   private val conf = new Configuration
-  //TODO: is it possible to make these settings hadoop version independent?
+  //TODO: is it possible to make these settings hadoop version independent? lol.
   private val hadoopPrefix = sys.env("HADOOP_PREFIX")
   private val hdfsCoreSitePath = new Path(hadoopPrefix+"/etc/hadoop/" + "core-site.xml")
   private val hdfsHDFSSitePath = new Path(hadoopPrefix+"/etc/hadoop/" + "hdfs-site.xml")
@@ -35,7 +36,7 @@ object HDFSFileService {
     }
   }
 
-  def writeToSequenceFile(tuples: List[(String, String)], filename: String): Unit = {
+  def writeToSequenceFile(tuples: Seq[(String, String)], filename: String): Unit = {
     val writer: SequenceFile.Writer = SequenceFile.createWriter(conf,
       SequenceFile.Writer.keyClass(classOf[Text]),
       SequenceFile.Writer.valueClass(classOf[Text]),
@@ -46,18 +47,20 @@ object HDFSFileService {
     writer.close()
   }
 
-  def writeAllFilesToSequenceFile(path: File, filename: String): Unit = {
-    val writer: SequenceFile.Writer = SequenceFile.createWriter(conf,
-      SequenceFile.Writer.keyClass(classOf[Text]),
-      SequenceFile.Writer.valueClass(classOf[Text]),
-      SequenceFile.Writer.file(new Path(filename)))
-    for ((k,v) <- textProcessor.getFiles(path)
+  def writeAllFilesToSequenceFiles(path: File, filename: String, numPerOutFile: Int = 10000): Unit = {
+    /**
+     * The .toiterator in the following val was the solution to a memory leak (so to speak).  It takes the
+     * Stream object and frees up the processed elements for the GC
+     */
+    val keyVals = textProcessor.getFiles(path).toIterator
       .map(textProcessor.getLinesFromFile).flatten
       .map(_.mkString("\n"))
-      .map(em => (textProcessor.md5Hash(em),em))) {
-      writer.append(new Text(k), new Text(v))
+      .map(em => (textProcessor.md5Hash(em), em))
+    var i = 0
+    for (group <- keyVals.grouped(numPerOutFile)) {
+      writeToSequenceFile(group, filename+i)
+      i+=1
     }
-    writer.close()
   }
 
 
